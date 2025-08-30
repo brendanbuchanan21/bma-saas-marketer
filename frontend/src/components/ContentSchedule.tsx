@@ -10,7 +10,11 @@ interface ContentItem {
   platform: string
 }
 
-function ContentSchedule() {
+interface ContentScheduleProps {
+  userRole: 'admin' | 'client'
+}
+
+function ContentSchedule({ userRole }: ContentScheduleProps) {
   const [filter, setFilter] = useState<'all' | 'scheduled' | 'published' | 'draft'>('all')
   const [content] = useState<ContentItem[]>([
     {
@@ -81,16 +85,30 @@ function ContentSchedule() {
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Content Schedule</h2>
-          <p className="mt-1 text-sm text-gray-600">
-            Manage and review scheduled content across all clients
-          </p>
+      <div className={`p-4 rounded-lg ${userRole === 'admin' ? 'bg-secondary-50 border border-secondary-200' : 'bg-primary-50 border border-primary-200'}`}>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center space-x-2">
+            <span className="text-2xl">{userRole === 'admin' ? '👑' : '📝'}</span>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">
+                {userRole === 'admin' ? 'All Content Schedule' : 'My Content Schedule'}
+              </h2>
+              <p className="mt-1 text-sm text-gray-600">
+                {userRole === 'admin' 
+                  ? 'Manage and review scheduled content across all clients'
+                  : 'Manage and review your scheduled content'
+                }
+              </p>
+            </div>
+          </div>
+          <button className={`text-white font-medium py-2 px-4 rounded-lg transition-colors ${
+            userRole === 'admin' 
+              ? 'bg-secondary-500 hover:bg-secondary-600' 
+              : 'bg-primary-500 hover:bg-primary-600'
+          }`}>
+            Generate New Content
+          </button>
         </div>
-        <button className="bg-primary-500 hover:bg-primary-600 text-white font-medium py-2 px-4 rounded-lg transition-colors">
-          Generate New Content
-        </button>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">

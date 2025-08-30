@@ -26,12 +26,21 @@ function StatsCard({ title, value, change, changeType }: StatsCardProps) {
   )
 }
 
-function Dashboard() {
-  const stats = [
+interface DashboardProps {
+  userRole: 'admin' | 'client'
+}
+
+function Dashboard({ userRole }: DashboardProps) {
+  const stats = userRole === 'admin' ? [
     { title: 'Active Clients', value: '8', change: '12%', changeType: 'positive' as const },
     { title: 'Posts This Month', value: '147', change: '8%', changeType: 'positive' as const },
     { title: 'Scheduled Posts', value: '32', change: '4%', changeType: 'positive' as const },
     { title: 'Published Today', value: '6', change: '0%', changeType: 'positive' as const },
+  ] : [
+    { title: 'Your Posts This Month', value: '23', change: '15%', changeType: 'positive' as const },
+    { title: 'Scheduled Posts', value: '8', change: '12%', changeType: 'positive' as const },
+    { title: 'Published Today', value: '1', change: '0%', changeType: 'positive' as const },
+    { title: 'Engagement Rate', value: '4.2%', change: '8%', changeType: 'positive' as const },
   ]
 
   const recentActivity = [
@@ -43,11 +52,21 @@ function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
-        <p className="mt-1 text-sm text-gray-600">
-          Overview of your content automation platform
-        </p>
+      <div className={`p-4 rounded-lg ${userRole === 'admin' ? 'bg-secondary-50 border border-secondary-200' : 'bg-primary-50 border border-primary-200'}`}>
+        <div className="flex items-center space-x-2">
+          <span className="text-2xl">{userRole === 'admin' ? '👑' : '👤'}</span>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              {userRole === 'admin' ? 'Admin Dashboard' : 'Client Dashboard'}
+            </h2>
+            <p className="mt-1 text-sm text-gray-600">
+              {userRole === 'admin' 
+                ? 'Manage all clients and monitor system-wide content automation' 
+                : 'Overview of your content automation and publishing'
+              }
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -82,14 +101,20 @@ function Dashboard() {
           </div>
           <div className="p-6">
             <div className="space-y-4">
-              <button className="w-full bg-primary-500 hover:bg-primary-600 text-white font-medium py-3 px-4 rounded-lg transition-colors">
+              <button className={`w-full text-white font-medium py-3 px-4 rounded-lg transition-colors ${
+                userRole === 'admin' 
+                  ? 'bg-secondary-500 hover:bg-secondary-600' 
+                  : 'bg-primary-500 hover:bg-primary-600'
+              }`}>
                 Generate Content Now
               </button>
+              {userRole === 'admin' && (
+                <button className="w-full bg-white hover:bg-gray-50 text-gray-700 font-medium py-3 px-4 rounded-lg border border-gray-200 transition-colors">
+                  Add New Client
+                </button>
+              )}
               <button className="w-full bg-white hover:bg-gray-50 text-gray-700 font-medium py-3 px-4 rounded-lg border border-gray-200 transition-colors">
-                Add New Client
-              </button>
-              <button className="w-full bg-white hover:bg-gray-50 text-gray-700 font-medium py-3 px-4 rounded-lg border border-gray-200 transition-colors">
-                View Analytics
+                {userRole === 'admin' ? 'System Analytics' : 'My Analytics'}
               </button>
             </div>
           </div>
