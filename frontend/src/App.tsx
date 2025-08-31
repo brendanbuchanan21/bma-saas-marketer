@@ -36,7 +36,10 @@ function App() {
 
   const renderPage = () => {
     if (!user) {
-      return <LandingPage onGetStarted={() => setShowAuthModal(true)} />
+      return <LandingPage 
+        onGetStarted={() => setShowAuthModal(true)}
+        onSignIn={() => setShowAuthModal(true)}
+      />
     }
 
     // Show different content based on user role

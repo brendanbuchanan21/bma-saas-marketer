@@ -1,8 +1,9 @@
 interface LandingPageProps {
   onGetStarted: () => void
+  onSignIn: () => void
 }
 
-function LandingPage({ onGetStarted }: LandingPageProps) {
+function LandingPage({ onGetStarted, onSignIn }: LandingPageProps) {
   const features = [
     {
       icon: '🤖',
@@ -46,6 +47,33 @@ function LandingPage({ onGetStarted }: LandingPageProps) {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Navigation */}
+      <nav className="bg-white shadow-sm relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <h1 className="text-xl font-semibold text-gray-900">
+                BMA Content Studio
+              </h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              <button 
+                onClick={onSignIn}
+                className="text-gray-600 hover:text-primary-600 font-medium transition-colors hover:bg-gray-50 px-4 py-2 rounded-lg"
+              >
+                Sign In
+              </button>
+              <button 
+                onClick={onGetStarted}
+                className="bg-primary-500 hover:bg-primary-600 text-white font-medium px-4 py-2 rounded-lg border border-primary-500 hover:border-primary-600 transition-all"
+              >
+                Sign Up
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-primary-50 via-white to-primary-50 relative overflow-hidden">
         <div className="absolute inset-0">

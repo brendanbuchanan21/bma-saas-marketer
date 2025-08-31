@@ -1,3 +1,6 @@
+import { useState, useEffect } from 'react'
+import apiService from '../services/api'
+
 interface StatsCardProps {
   title: string
   value: string
@@ -30,24 +33,124 @@ interface DashboardProps {
   userRole: 'admin' | 'client'
 }
 
-function Dashboard({ userRole }: DashboardProps) {
-  const stats = userRole === 'admin' ? [
-    { title: 'Active Clients', value: '8', change: '12%', changeType: 'positive' as const },
-    { title: 'Posts This Month', value: '147', change: '8%', changeType: 'positive' as const },
-    { title: 'Scheduled Posts', value: '32', change: '4%', changeType: 'positive' as const },
-    { title: 'Published Today', value: '6', change: '0%', changeType: 'positive' as const },
-  ] : [
-    { title: 'Your Posts This Month', value: '23', change: '15%', changeType: 'positive' as const },
-    { title: 'Scheduled Posts', value: '8', change: '12%', changeType: 'positive' as const },
-    { title: 'Published Today', value: '1', change: '0%', changeType: 'positive' as const },
-    { title: 'Engagement Rate', value: '4.2%', change: '8%', changeType: 'positive' as const },
-  ]
+function EmptyState({ userRole }: { userRole: 'admin' | 'client' }) {
+  return (
+    <div className="min-h-96 flex flex-col items-center justify-center bg-white rounded-xl shadow-sm border border-gray-200 p-12">
+      <div className="text-center">
+        <div className="text-6xl mb-6">🚀</div>
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+          Welcome to BMA Content Studio!
+        </h3>
+        <p className="text-gray-600 mb-8 max-w-md">
+          {userRole === 'admin' 
+            ? 'No clients have been added yet. Start by adding your first client to begin automating their content.'
+            : 'Your profile hasn\'t been set up yet. Complete your business profile to start generating automated content.'
+          }
+        </p>
+        <div className="space-y-4">
+          <button className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+            userRole === 'admin'
+              ? 'bg-secondary-500 hover:bg-secondary-600 text-white'
+              : 'bg-primary-500 hover:bg-primary-600 text-white'
+          }`}>
+            {userRole === 'admin' ? 'Add Your First Client' : 'Setup Your Profile'}
+          </button>
+          <div className="text-sm text-gray-500">
+            Get started in less than 5 minutes
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
-  const recentActivity = [
-    { client: 'Tech Startup Co', action: 'Blog post published', time: '2 hours ago' },
-    { client: 'Local Restaurant', action: 'LinkedIn post scheduled', time: '4 hours ago' },
-    { client: 'Fitness Studio', action: 'Content generated', time: '6 hours ago' },
-    { client: 'E-commerce Store', action: 'WordPress post published', time: '8 hours ago' },
+function Dashboard({ userRole }: DashboardProps) {
+  const [loading, setLoading] = useState(true)
+  const [clients, setClients] = useState([])
+  const [content, setContent] = useState([])
+  const [analytics, setAnalytics] = useState(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        const [clientsData, contentData, analyticsData] = await Promise.all([
+          apiService.getClients().catch(() => ({ success: false, data: [] })),
+          apiService.getContent().catch(() => ({ success: false, data: [] })),
+          apiService.getAnalyticsOverview().catch(() => ({ success: false, data: null }))
+        ])
+
+        setClients(clientsData.data || [])
+        setContent(contentData.data || [])
+        setAnalytics(analyticsData.data)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load dashboard data')
+        console.error('Dashboard data fetch error:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchDashboardData()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <div className="animate-pulse">
+          <div className="h-20 bg-gray-200 rounded-lg mb-6"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-32 bg-gray-200 rounded-xl"></div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="h-80 bg-gray-200 rounded-xl"></div>
+            <div className="h-80 bg-gray-200 rounded-xl"></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-96 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-5xl mb-4">⚠️</div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Unable to Load Dashboard</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Show empty state if no clients (for admin) or no profile setup (for client)
+  const hasData = clients.length > 0 || content.length > 0
+  if (!hasData) {
+    return <EmptyState userRole={userRole} />
+  }
+
+  // Calculate stats from real data
+  const stats = userRole === 'admin' ? [
+    { title: 'Active Clients', value: clients.length.toString(), change: '0%', changeType: 'positive' as const },
+    { title: 'Total Content', value: content.length.toString(), change: '0%', changeType: 'positive' as const },
+    { title: 'Published Posts', value: content.filter((c: any) => c.status === 'PUBLISHED').length.toString(), change: '0%', changeType: 'positive' as const },
+    { title: 'Scheduled Posts', value: content.filter((c: any) => c.status === 'SCHEDULED').length.toString(), change: '0%', changeType: 'positive' as const },
+  ] : [
+    { title: 'Your Content', value: content.length.toString(), change: '0%', changeType: 'positive' as const },
+    { title: 'Published Posts', value: content.filter((c: any) => c.status === 'PUBLISHED').length.toString(), change: '0%', changeType: 'positive' as const },
+    { title: 'Scheduled Posts', value: content.filter((c: any) => c.status === 'SCHEDULED').length.toString(), change: '0%', changeType: 'positive' as const },
+    { title: 'Draft Posts', value: content.filter((c: any) => c.status === 'DRAFT').length.toString(), change: '0%', changeType: 'positive' as const },
   ]
 
   return (
@@ -81,17 +184,25 @@ function Dashboard({ userRole }: DashboardProps) {
             <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
           </div>
           <div className="p-6">
-            <div className="space-y-4">
-              {recentActivity.map((activity, index) => (
-                <div key={index} className="flex items-center justify-between py-3">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">{activity.client}</p>
-                    <p className="text-sm text-gray-500">{activity.action}</p>
+            {content.length > 0 ? (
+              <div className="space-y-4">
+                {content.slice(0, 4).map((item: any, index) => (
+                  <div key={index} className="flex items-center justify-between py-3">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900 truncate">{item.title}</p>
+                      <p className="text-sm text-gray-500">Status: {item.status}</p>
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {new Date(item.createdAt).toLocaleDateString()}
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-400">{activity.time}</div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                No recent activity to display
+              </div>
+            )}
           </div>
         </div>
 
