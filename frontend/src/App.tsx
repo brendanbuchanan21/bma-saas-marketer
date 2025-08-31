@@ -4,6 +4,7 @@ import ClientProfile from './components/ClientProfile'
 import ContentSchedule from './components/ContentSchedule'
 import AuthModal from './components/AuthModal'
 import UserMenu from './components/UserMenu'
+import LandingPage from './components/LandingPage'
 
 type Page = 'dashboard' | 'clients' | 'content'
 
@@ -46,20 +47,7 @@ function App() {
 
   const renderPage = () => {
     if (!user) {
-      return (
-        <div className="min-h-[400px] flex items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Welcome to BMA Content Studio</h2>
-            <p className="text-gray-600 mb-8">Please sign in to access your content automation dashboard</p>
-            <button 
-              onClick={() => setShowAuthModal(true)}
-              className="bg-primary-500 hover:bg-primary-600 text-white font-medium py-3 px-6 rounded-lg transition-colors"
-            >
-              Get Started
-            </button>
-          </div>
-        </div>
-      )
+      return <LandingPage onGetStarted={() => setShowAuthModal(true)} />
     }
 
     // Show different content based on user role
@@ -80,6 +68,20 @@ function App() {
     }
   }
 
+  if (!user) {
+    return (
+      <>
+        {renderPage()}
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          onLogin={handleLogin}
+          onRegister={handleRegister}
+        />
+      </>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm border-b border-gray-200">
@@ -91,53 +93,42 @@ function App() {
               </h1>
             </div>
             <div className="flex items-center space-x-4">
-              {user && (
-                <div className="flex space-x-1">
-                  <button 
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      currentPage === 'dashboard' 
-                        ? 'bg-primary-100 text-primary-600' 
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                    }`}
-                    onClick={() => setCurrentPage('dashboard')}
-                  >
-                    Dashboard
-                  </button>
-                  {user.role === 'admin' && (
-                    <button 
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        currentPage === 'clients' 
-                          ? 'bg-primary-100 text-primary-600' 
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                      }`}
-                      onClick={() => setCurrentPage('clients')}
-                    >
-                      Clients
-                    </button>
-                  )}
-                  <button 
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      currentPage === 'content' 
-                        ? 'bg-primary-100 text-primary-600' 
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                    }`}
-                    onClick={() => setCurrentPage('content')}
-                  >
-                    Content
-                  </button>
-                </div>
-              )}
-              
-              {user ? (
-                <UserMenu user={user} onLogout={handleLogout} />
-              ) : (
+              <div className="flex space-x-1">
                 <button 
-                  onClick={() => setShowAuthModal(true)}
-                  className="bg-primary-500 hover:bg-primary-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    currentPage === 'dashboard' 
+                      ? 'bg-primary-100 text-primary-600' 
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
+                  onClick={() => setCurrentPage('dashboard')}
                 >
-                  Sign In
+                  Dashboard
                 </button>
-              )}
+                {user.role === 'admin' && (
+                  <button 
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      currentPage === 'clients' 
+                        ? 'bg-primary-100 text-primary-600' 
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    }`}
+                    onClick={() => setCurrentPage('clients')}
+                  >
+                    Clients
+                  </button>
+                )}
+                <button 
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    currentPage === 'content' 
+                      ? 'bg-primary-100 text-primary-600' 
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
+                  onClick={() => setCurrentPage('content')}
+                >
+                  Content
+                </button>
+              </div>
+              
+              <UserMenu user={user} onLogout={handleLogout} />
             </div>
           </div>
         </div>

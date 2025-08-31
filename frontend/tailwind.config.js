@@ -16,6 +16,12 @@ export default {
         secondary: {
           500: '#f97316',
           600: '#ea580c',
+        },
+        accent: {
+          400: '#fbbf24',
+          500: '#f59e0b',
+          50: '#fffbeb',
+          100: '#fef3c7',
         }
       }
     },
