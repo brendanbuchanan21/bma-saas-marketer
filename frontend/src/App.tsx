@@ -20,24 +20,13 @@ function App() {
   const [user, setUser] = useState<User | null>(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
 
-  const handleLogin = async (email: string, password: string) => {
-    // Mock authentication - replace with Firebase
-    const mockUser: User = {
-      name: email === 'admin@bma.com' ? 'Admin User' : 'Client User',
-      email: email,
-      role: email === 'admin@bma.com' ? 'admin' : 'client'
+  const handleAuthSuccess = (userData: any) => {
+    const user: User = {
+      name: userData.name,
+      email: userData.email || '',
+      role: userData.role || 'client'
     }
-    setUser(mockUser)
-  }
-
-  const handleRegister = async (name: string, email: string, password: string) => {
-    // Mock registration - replace with Firebase
-    const mockUser: User = {
-      name: name,
-      email: email,
-      role: 'client' // New users start as clients
-    }
-    setUser(mockUser)
+    setUser(user)
   }
 
   const handleLogout = () => {
@@ -75,8 +64,7 @@ function App() {
         <AuthModal
           isOpen={showAuthModal}
           onClose={() => setShowAuthModal(false)}
-          onLogin={handleLogin}
-          onRegister={handleRegister}
+          onAuthSuccess={handleAuthSuccess}
         />
       </>
     )
@@ -140,8 +128,7 @@ function App() {
       <AuthModal
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
-        onLogin={handleLogin}
-        onRegister={handleRegister}
+        onAuthSuccess={handleAuthSuccess}
       />
     </div>
   )
