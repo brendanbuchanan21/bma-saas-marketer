@@ -1,0 +1,193 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  firebaseUid String @unique
+  email     String   @unique
+  name      String
+  role      UserRole @default(CLIENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  clients   Client[]
+  content   Content[]
+  
+  @@map("users")
+}
+
+model Client {
+  id          String   @id @default(cuid())
+  name        String
+  industry    String
+  description String?
+  website     String?
+  
+  // Business context for AI content generation
+  services    String[] // Array of services offered
+  targetKeywords String[] // SEO keywords
+  brandVoice  String?  // Brand voice guidelines
+  contentPreferences Json? // JSON object for content preferences
+  
+  // Social media and publishing settings
+  wordpressUrl String?
+  linkedinProfile String?
+  publishingSchedule Json? // JSON for scheduling preferences
+  
+  // Metadata
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  userId   String
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content  Content[]
+  schedules Schedule[]
+  
+  @@map("clients")
+}
+
+model Content {
+  id          String      @id @default(cuid())
+  title       String
+  content     String      // The actual content (HTML/Markdown)
+  excerpt     String?     // Short description
+  type        ContentType
+  status      ContentStatus @default(DRAFT)
+  
+  // SEO and metadata
+  seoTitle    String?
+  seoDescription String?
+  keywords    String[]
+  tags        String[]
+  
+  // Publishing information
+  publishedAt DateTime?
+  scheduledFor DateTime?
+  platform    PublishPlatform[]
+  
+  // Performance tracking
+  views       Int @default(0)
+  engagement  Json? // JSON object for engagement metrics
+  
+  // AI generation metadata
+  aiPrompt    String? // The prompt used to generate this content
+  aiModel     String? // Which AI model was used
+  
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  schedules   Schedule[]
+  
+  @@map("content")
+}
+
+model Schedule {
+  id          String   @id @default(cuid())
+  
+  // Scheduling details
+  publishDate DateTime
+  platform    PublishPlatform
+  status      ScheduleStatus @default(PENDING)
+  
+  // Publishing results
+  publishedAt DateTime?
+  publishUrl  String?
+  errorMessage String?
+  
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  contentId   String
+  content     Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  @@map("schedules")
+}
+
+// Analytics model for tracking performance
+model Analytics {
+  id          String   @id @default(cuid())
+  
+  // Content performance
+  contentId   String?
+  platform    PublishPlatform
+  metric      AnalyticsMetric
+  value       Float
+  date        DateTime
+  
+  // Additional metadata as JSON
+  metadata    Json?
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  
+  @@map("analytics")
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  CLIENT
+}
+
+enum ContentType {
+  BLOG_POST
+  SOCIAL_POST
+  LINKEDIN_POST
+  SEO_ARTICLE
+}
+
+enum ContentStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+  FAILED
+}
+
+enum PublishPlatform {
+  WORDPRESS
+  LINKEDIN
+  FACEBOOK
+  TWITTER
+  INSTAGRAM
+}
+
+enum ScheduleStatus {
+  PENDING
+  PROCESSING
+  PUBLISHED
+  FAILED
+  CANCELLED
+}
+
+enum AnalyticsMetric {
+  VIEWS
+  CLICKS
+  SHARES
+  LIKES
+  COMMENTS
+  ENGAGEMENT_RATE
+  CTR
+}

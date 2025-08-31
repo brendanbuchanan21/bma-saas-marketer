@@ -1,1 +1,21 @@
-Claude.md
+# Backend Environment Files
+backend/.env
+backend/.env.backend
+backend/.env.*
+backend/*firebase*adminsdk*.json
+
+# Frontend Environment Files  
+frontend/.env
+frontend/.env.local
+frontend/.env.production
+
+# General
+.DS_Store
+node_modules/
+*.log
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
