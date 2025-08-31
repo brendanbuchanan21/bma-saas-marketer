@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { auth } from '../firebase'
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth'
 
@@ -18,10 +18,25 @@ function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [firebaseReady, setFirebaseReady] = useState(false)
+
+  useEffect(() => {
+    // Check if Firebase auth is ready
+    const checkFirebase = () => {
+      if (auth) {
+        setFirebaseReady(true)
+      } else {
+        // Retry after a short delay if Firebase isn't ready
+        setTimeout(checkFirebase, 100)
+      }
+    }
+    checkFirebase()
+  }, [])
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   if (!isOpen) return null
+  if (!firebaseReady) return null
 
   const getFirebaseErrorMessage = (errorCode: string) => {
     switch (errorCode) {

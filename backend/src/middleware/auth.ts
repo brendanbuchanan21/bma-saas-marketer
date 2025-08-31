@@ -1,5 +1,41 @@
 import { Request, Response, NextFunction } from 'express';
 import admin from 'firebase-admin';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+// Helper function to get or create user in database
+async function getOrCreateUser(userData: {
+  firebaseUid: string;
+  email: string;
+  name: string;
+}) {
+  try {
+    // Try to find existing user
+    let user = await prisma.user.findUnique({
+      where: { firebaseUid: userData.firebaseUid }
+    });
+
+    if (!user) {
+      // Create new user if doesn't exist
+      const role = userData.email === 'admin@bma.com' ? 'ADMIN' : 'CLIENT';
+      
+      user = await prisma.user.create({
+        data: {
+          firebaseUid: userData.firebaseUid,
+          email: userData.email,
+          name: userData.name,
+          role
+        }
+      });
+    }
+
+    return user;
+  } catch (error) {
+    console.error('Error getting or creating user:', error);
+    throw error;
+  }
+}
 
 // Initialize Firebase Admin with environment variables
 if (!admin.apps.length) {
@@ -18,9 +54,11 @@ declare global {
   namespace Express {
     interface Request {
       user?: {
+        id: string;
         uid: string;
         email: string;
-        role?: 'admin' | 'client';
+        name: string;
+        role: 'ADMIN' | 'CLIENT';
       };
     }
   }
@@ -45,12 +83,20 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
     // Verify the ID token with Firebase Admin
     const decodedToken = await admin.auth().verifyIdToken(idToken);
     
+    // Get or create user in database
+    const user = await getOrCreateUser({
+      firebaseUid: decodedToken.uid,
+      email: decodedToken.email || '',
+      name: decodedToken.name || decodedToken.email || 'User'
+    });
+    
     // Add user info to request object
     req.user = {
-      uid: decodedToken.uid,
-      email: decodedToken.email || '',
-      // Default role logic - can be enhanced with database lookup
-      role: decodedToken.email === 'admin@bma.com' ? 'admin' : 'client'
+      id: user.id,
+      uid: user.firebaseUid,
+      email: user.email,
+      name: user.name,
+      role: user.role
     };
 
     next();
@@ -74,7 +120,7 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction) =>
     });
   }
 
-  if (req.user.role !== 'admin') {
+  if (req.user.role !== 'ADMIN') {
     return res.status(403).json({
       error: 'Forbidden',
       message: 'Admin access required'
@@ -95,10 +141,18 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
       const idToken = authHeader.split('Bearer ')[1];
       const decodedToken = await admin.auth().verifyIdToken(idToken);
       
-      req.user = {
-        uid: decodedToken.uid,
+      const user = await getOrCreateUser({
+        firebaseUid: decodedToken.uid,
         email: decodedToken.email || '',
-        role: decodedToken.email === 'admin@bma.com' ? 'admin' : 'client'
+        name: decodedToken.name || decodedToken.email || 'User'
+      });
+      
+      req.user = {
+        id: user.id,
+        uid: user.firebaseUid,
+        email: user.email,
+        name: user.name,
+        role: user.role
       };
     }
     

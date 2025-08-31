@@ -62,9 +62,7 @@ npm run preview # Preview production build
 Claude Code should always reference the following docs when generating code:
 - /docs/coding-standards.md
 - /docs/api-design.md
-- /docs/database-schema.md
+
 - /docs/frontend-guidelines.md
 - /docs/ai-pipeline.md
-- /docs/security.md
-- /docs/project-management.md
-- /docs/contribution-guidelines.md
+

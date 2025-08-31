@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import apiService from '../services/api'
+import OnboardingFlow from './OnboardingFlow'
+import type { OnboardingData } from './OnboardingFlow'
 
 interface StatsCardProps {
   title: string
@@ -33,7 +35,13 @@ interface DashboardProps {
   userRole: 'admin' | 'client'
 }
 
-function EmptyState({ userRole }: { userRole: 'admin' | 'client' }) {
+function EmptyState({ 
+  userRole, 
+  onStartOnboarding 
+}: { 
+  userRole: 'admin' | 'client'
+  onStartOnboarding: () => void 
+}) {
   return (
     <div className="min-h-96 flex flex-col items-center justify-center bg-white rounded-xl shadow-sm border border-gray-200 p-12">
       <div className="text-center">
@@ -48,11 +56,14 @@ function EmptyState({ userRole }: { userRole: 'admin' | 'client' }) {
           }
         </p>
         <div className="space-y-4">
-          <button className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-            userRole === 'admin'
-              ? 'bg-secondary-500 hover:bg-secondary-600 text-white'
-              : 'bg-primary-500 hover:bg-primary-600 text-white'
-          }`}>
+          <button 
+            onClick={onStartOnboarding}
+            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+              userRole === 'admin'
+                ? 'bg-secondary-500 hover:bg-secondary-600 text-white'
+                : 'bg-primary-500 hover:bg-primary-600 text-white'
+            }`}
+          >
             {userRole === 'admin' ? 'Add Your First Client' : 'Setup Your Profile'}
           </button>
           <div className="text-sm text-gray-500">
@@ -70,6 +81,8 @@ function Dashboard({ userRole }: DashboardProps) {
   const [content, setContent] = useState([])
   const [analytics, setAnalytics] = useState(null)
   const [error, setError] = useState<string | null>(null)
+  const [showOnboarding, setShowOnboarding] = useState(false)
+  const [onboardingLoading, setOnboardingLoading] = useState(false)
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -96,6 +109,48 @@ function Dashboard({ userRole }: DashboardProps) {
 
     fetchDashboardData()
   }, [])
+
+  const handleOnboardingComplete = async (data: OnboardingData) => {
+    try {
+      setOnboardingLoading(true)
+      
+      // Create client profile with onboarding data
+      await apiService.createClient({
+        name: data.businessName,
+        industry: data.industry,
+        description: data.description,
+        services: data.services,
+        targetKeywords: data.keywords,
+        brandVoice: data.brandVoice,
+        website: data.website,
+        linkedinProfile: data.linkedinProfile,
+        contentPreferences: {
+          targetAudience: data.targetAudience,
+          goals: data.goals,
+          contentTypes: data.contentTypes
+        }
+      })
+
+      // Refresh dashboard data
+      const [clientsData, contentData] = await Promise.all([
+        apiService.getClients().catch(() => ({ data: [] })),
+        apiService.getContent().catch(() => ({ data: [] }))
+      ])
+
+      setClients(clientsData.data || [])
+      setContent(contentData.data || [])
+      setShowOnboarding(false)
+    } catch (err) {
+      console.error('Failed to save profile:', err)
+      setError('Failed to save profile. Please try again.')
+    } finally {
+      setOnboardingLoading(false)
+    }
+  }
+
+  const handleSkipOnboarding = () => {
+    setShowOnboarding(false)
+  }
 
   if (loading) {
     return (
@@ -134,10 +189,37 @@ function Dashboard({ userRole }: DashboardProps) {
     )
   }
 
+  // Show onboarding flow if triggered
+  if (showOnboarding) {
+    return (
+      <div className="space-y-8">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Let's set up your profile</h1>
+          <p className="text-gray-600">This will help us create personalized content for your business.</p>
+        </div>
+        
+        {onboardingLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+            <span className="ml-3 text-gray-600">Saving your profile...</span>
+          </div>
+        ) : (
+          <OnboardingFlow 
+            onComplete={handleOnboardingComplete}
+            onSkip={handleSkipOnboarding}
+          />
+        )}
+      </div>
+    )
+  }
+
   // Show empty state if no clients (for admin) or no profile setup (for client)
   const hasData = clients.length > 0 || content.length > 0
   if (!hasData) {
-    return <EmptyState userRole={userRole} />
+    return <EmptyState 
+      userRole={userRole} 
+      onStartOnboarding={() => setShowOnboarding(true)}
+    />
   }
 
   // Calculate stats from real data

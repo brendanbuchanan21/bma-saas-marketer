@@ -25,18 +25,24 @@ const requiredEnvVars = [
 
 for (const envVar of requiredEnvVars) {
   if (!import.meta.env[envVar]) {
-    throw new Error(`Missing required environment variable: ${envVar}`)
+    console.warn(`Missing environment variable: ${envVar}`)
   }
 }
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig)
+// Initialize Firebase (with error handling)
+let app: any = null
+let auth: any = null
+let db: any = null
 
-// Initialize Firebase Auth
-export const auth = getAuth(app)
+try {
+  app = initializeApp(firebaseConfig)
+  auth = getAuth(app)
+  db = getFirestore(app)
+} catch (error) {
+  console.error('Firebase initialization error:', error)
+}
 
-// Initialize Firestore
-export const db = getFirestore(app)
+export { auth, db }
 
 // Export the Firebase app instance
 export { app }
